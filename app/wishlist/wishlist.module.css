@@ -49,3 +49,6 @@
    the threshold stops the zoom happening at all, which is the only fix that
    actually holds. Desktop keeps 14px. */
 @media(max-width:700px){.walletInput{font-size:16px}}
+/* Turnstile draws its own box; this only reserves the space so the button does
+   not jump when the widget finishes loading. */
+.turnstile{min-height:65px;margin:0 0 22px}

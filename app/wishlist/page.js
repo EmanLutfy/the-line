@@ -13,6 +13,7 @@ const SLOTS = 41
 
 // The project account. The homepage nav and footer point at the same one.
 const X_PROFILE = 'https://x.com/thelinesart'
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
 function DrawAnimation({ active, muted, onComplete }) {
   const canvasRef = useRef(null)
@@ -170,6 +171,40 @@ export default function DrawPage() {
   const [muted, setMuted] = useState(false)
   const pending = useRef(false)
   const artRef = useRef(null)
+  const turnstileBox = useRef(null)
+  const turnstileWidget = useRef(null)
+  const [turnstileToken, setTurnstileToken] = useState('')
+
+  // Rendered explicitly rather than by class name: React re-renders would
+  // otherwise let Turnstile mount a second widget into the same form.
+  useEffect(() => {
+    if (!TURNSTILE_SITE_KEY) return undefined
+    const scriptId = 'cf-turnstile'
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script')
+      script.id = scriptId
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
+      script.async = true
+      document.head.appendChild(script)
+    }
+    let stopped = false
+    const mount = () => {
+      if (stopped) return
+      if (window.turnstile && turnstileBox.current && turnstileWidget.current === null) {
+        turnstileWidget.current = window.turnstile.render(turnstileBox.current, {
+          sitekey: TURNSTILE_SITE_KEY,
+          theme: 'dark',
+          callback: setTurnstileToken,
+          'expired-callback': () => setTurnstileToken(''),
+          'error-callback': () => setTurnstileToken(''),
+        })
+        return
+      }
+      window.setTimeout(mount, 200)
+    }
+    mount()
+    return () => { stopped = true }
+  }, [])
 
   const submit = async event => {
     event.preventDefault()
@@ -185,13 +220,17 @@ export default function DrawPage() {
       setError('Enter a wallet address to continue.')
       return
     }
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setError('Verification is still running. Try again in a moment.')
+      return
+    }
     if (pending.current) return
     pending.current = true
     try {
       const response = await fetch('/api/wishlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress: wallet, twitterHandle: handle }),
+        body: JSON.stringify({ walletAddress: wallet, twitterHandle: handle, turnstileToken }),
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) {
@@ -200,7 +239,12 @@ export default function DrawPage() {
         else if (data.code === 'INVALID_HANDLE') setError('INVALID HANDLE — Letters, numbers and underscore, up to 15 characters.')
         else if (data.code === 'DRAW_CLOSED') setError('THE WISHLIST IS CLOSED.')
         else if (data.code === 'NOT_AUTHENTICATED') setError('REGISTRATION IS NOT OPEN.')
+        else if (data.code === 'VERIFICATION_FAILED') setError('VERIFICATION FAILED — Reload the page and try again.')
         else setError(`The wishlist is not available right now.${data.code ? ` (${data.code})` : ''}`)
+        if (window.turnstile && turnstileWidget.current !== null) {
+          window.turnstile.reset(turnstileWidget.current)
+          setTurnstileToken('')
+        }
         return
       }
       setState('drawing')
@@ -239,6 +283,7 @@ export default function DrawPage() {
             <label className={styles.inputLabel} htmlFor="wallet-address">WALLET ADDRESS</label>
             <input className={styles.walletInput} id="wallet-address" name="walletAddress" type="text" inputMode="text" autoComplete="off" spellCheck="false" placeholder="0x..." value={wallet} onChange={event => setWallet(event.target.value)} />
           </div>
+          {TURNSTILE_SITE_KEY && <div className={styles.turnstile} ref={turnstileBox} />}
           {visitedX
             ? <button className={styles.primaryButton} type="submit">SUBMIT</button>
             : <a className={styles.primaryButton} href={X_PROFILE} target="_blank" rel="noreferrer" onClick={() => setVisitedX(true)}>FOLLOW ON X</a>}

@@ -6,9 +6,14 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  const draw = await getPublicDrawConfig()
-  if (!draw) return Response.json({ code: 'DRAW_UNAVAILABLE' }, { status: 503 })
-  return Response.json({ draw })
+  try {
+    const draw = await getPublicDrawConfig()
+    if (!draw) return Response.json({ code: 'DRAW_UNAVAILABLE' }, { status: 503 })
+    return Response.json({ draw })
+  } catch (error) {
+    console.error('[wishlist] config read failed:', error)
+    return Response.json({ code: 'DRAW_ERROR', detail: String(error && error.message) }, { status: 500 })
+  }
 }
 
 export async function POST(request) {

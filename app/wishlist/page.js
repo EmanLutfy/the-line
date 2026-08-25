@@ -200,7 +200,7 @@ export default function DrawPage() {
         else if (data.code === 'INVALID_HANDLE') setError('INVALID HANDLE — Letters, numbers and underscore, up to 15 characters.')
         else if (data.code === 'DRAW_CLOSED') setError('THE WISHLIST IS CLOSED.')
         else if (data.code === 'NOT_AUTHENTICATED') setError('REGISTRATION IS NOT OPEN.')
-        else setError('The wishlist is not available right now.')
+        else setError(`The wishlist is not available right now.${data.code ? ` (${data.code})` : ''}`)
         return
       }
       setState('drawing')

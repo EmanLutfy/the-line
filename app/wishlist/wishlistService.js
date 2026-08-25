@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto'
+import { createClient } from '@supabase/supabase-js'
 
 export const DRAW_ID = 'the-line-wishlist-001'
 
@@ -11,23 +11,13 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 // is wiped on restart and each serverless instance keeps its own copy.
 export const usingDatabase = Boolean(supabaseUrl && supabaseKey)
 
-// Specifier hidden from the bundler on purpose: Supabase is optional here, and
-// a plain dynamic import() is resolved at build time and fails when the package
-// is not installed.
-const loadModule = new Function('specifier', 'return import(specifier)')
-
-let clientPromise = null
+// A plain top-level import on purpose. Hiding the specifier from the bundler
+// also hides it from dependency tracing, so the package never reaches the
+// serverless bundle and the import throws at runtime in production.
+let client = null
 async function db() {
-  if (!clientPromise) {
-    clientPromise = loadModule('@supabase/supabase-js')
-      .then(({ createClient }) => createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } }))
-      .catch(error => {
-        clientPromise = null
-        console.error('[wishlist] @supabase/supabase-js is not installed. Run: npm install')
-        throw error
-      })
-  }
-  return clientPromise
+  if (!client) client = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
+  return client
 }
 
 export function normalizeWalletAddress(value) {

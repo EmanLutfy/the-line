@@ -1,0 +1,11 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+# Netlify needs this to run the App Router and the /api routes. Without it the
+# site is served as static files and every POST to /api/draw returns 404.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NODE_VERSION = "20"

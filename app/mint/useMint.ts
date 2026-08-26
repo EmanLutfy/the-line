@@ -38,7 +38,7 @@ export function useMint() {
 
   /* --------------------------------------------------------------- reads */
 
-  const { data: totalMinted, refetch: refetchMinted } = useReadContract({
+  const { data: totalMinted, refetch: refetchMinted, error: supplyError } = useReadContract({
     address: nftAddress,
     abi: theLineAbi,
     functionName: 'totalMinted',
@@ -46,7 +46,7 @@ export function useMint() {
     query: { enabled: Boolean(nftAddress), refetchInterval: 15_000 },
   })
 
-  const { data: sale } = useReadContracts({
+  const { data: sale, error: saleError } = useReadContracts({
     contracts: [
       { address: mintAddress, abi: lineMintAbi, functionName: 'price', chainId: activeChain.id },
       { address: mintAddress, abi: lineMintAbi, functionName: 'saleOpen', chainId: activeChain.id },
@@ -59,7 +59,7 @@ export function useMint() {
   const saleOpen = sale?.[1]?.result as boolean | undefined
   const paused = sale?.[2]?.result as boolean | undefined
 
-  const { data: wallet, refetch: refetchWallet } = useReadContracts({
+  const { data: wallet, refetch: refetchWallet, error: walletError } = useReadContracts({
     contracts: [
       {
         address: lineAddress,
@@ -83,6 +83,16 @@ export function useMint() {
   const balance = wallet?.[0]?.result as bigint | undefined
   const allowance = wallet?.[1]?.result as bigint | undefined
   const decimals = (wallet?.[2]?.result as number | undefined) ?? 18
+
+  // A failed read shows up in the UI as a quiet em dash, which looks like
+  // "loading" and hides the reason. React Query keeps the error rather than
+  // throwing it, so it has to be asked for explicitly.
+  useEffect(() => {
+    const failures = { supplyError, saleError, walletError }
+    for (const [name, error] of Object.entries(failures)) {
+      if (error) console.error(`[mint] ${name}:`, error)
+    }
+  }, [supplyError, saleError, walletError])
 
   const hasEnough = balance !== undefined && price !== undefined && balance >= price
   const needsApproval = allowance !== undefined && price !== undefined && allowance < price

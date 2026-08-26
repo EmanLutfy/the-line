@@ -38,7 +38,28 @@ const fadeUp = {
 }
 
 function IntroLoader({ onComplete }) {
-  return <motion.div className="intro-loader" initial={{ opacity: 1 }} animate={{ opacity: 0 }} transition={{ delay: 1.8, duration: 0.6 }} onAnimationComplete={onComplete}>
+  const doneRef = useRef(onComplete)
+  doneRef.current = onComplete
+
+  // The whole site sits behind this overlay, so the overlay must never be able
+  // to trap it. `onAnimationComplete` is the normal path and it is not
+  // reliable on its own: browsers pause animation frames while a document is
+  // hidden, so a phone that locks or switches apps during the first two
+  // seconds leaves the callback pending forever — a white screen with no way
+  // out but a reload. The timer clears it whatever happens, and reduced motion
+  // skips the intro entirely rather than animating something nobody asked for.
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      doneRef.current()
+      return undefined
+    }
+    // Longer than the 2.4s animation, so in the normal case the fade still
+    // wins and this is only ever the fallback.
+    const timer = setTimeout(() => doneRef.current(), 3200)
+    return () => clearTimeout(timer)
+  }, [])
+
+  return <motion.div className="intro-loader" initial={{ opacity: 1 }} animate={{ opacity: 0 }} transition={{ delay: 1.8, duration: 0.6 }} onAnimationComplete={() => doneRef.current()}>
     <motion.div className="intro-line" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 1.6, ease: [0.25, 0.46, 0.45, 0.94] }} />
     <span>The Line</span>
   </motion.div>
@@ -121,14 +142,14 @@ function SystemArtwork({ active }) {
     const y = active === 'position' ? (index % 2 ? baseY + 38 : baseY - 25) : active === 'formation' ? 48 + ((index * 67) % 405) : baseY
     return { index, x, y, x2: x, y2: y + length, isVisible }
   })
-  return <div className="system-artwork"><svg viewBox="0 0 512 512" role="img" aria-label="Interactive generative line composition"><rect width="512" height="512" fill="#050505" /><image href="/images/collection/1586.png" x="0" y="0" width="512" height="512" preserveAspectRatio="xMidYMid slice" opacity={active ? .18 : .72} />{lines.map((line) => <line className="system-art-line" key={line.index} x1={line.x} y1={line.y} x2={line.x2} y2={line.y2} stroke="#f5f5f5" strokeWidth={active === 'width' ? 5 : 4} strokeLinecap="square" style={{ opacity: line.isVisible ? (active ? .9 : .28) : 0 }} />)}</svg></div>
+  return <div className="system-artwork"><svg viewBox="0 0 512 512" role="img" aria-label="Interactive line composition"><rect width="512" height="512" fill="#050505" /><image href="/images/collection/1586.png" x="0" y="0" width="512" height="512" preserveAspectRatio="xMidYMid slice" opacity={active ? .18 : .72} />{lines.map((line) => <line className="system-art-line" key={line.index} x1={line.x} y1={line.y} x2={line.x2} y2={line.y2} stroke="#f5f5f5" strokeWidth={active === 'width' ? 5 : 4} strokeLinecap="square" style={{ opacity: line.isVisible ? (active ? .9 : .28) : 0 }} />)}</svg></div>
 }
 
-function GenerativeSystem() {
+function LineSystem() {
   const [active, setActive] = useState(null)
   const selectParameter = (id) => setActive(id)
   const resetParameter = () => setActive(null)
-  return <section className="system section-frame" id="system"><SectionLabel number="03">Generative system</SectionLabel><div className="system-head"><h2>The system behind<br /><em>the line.</em></h2><p>Every work is defined by six visual parameters: line count, formation, position, length, width and density.</p></div><div className="system-exhibit system-list-only">{systemParameters.map((parameter) => <SystemParameter key={parameter.id} parameter={parameter} active={active} onSelect={selectParameter} onReset={resetParameter} />)}</div></section>
+  return <section className="system section-frame" id="system"><SectionLabel number="03">The system</SectionLabel><div className="system-head"><h2>The system behind<br /><em>the line.</em></h2><p>Every work is defined by six visual parameters: line count, formation, position, length, width and density.</p></div><div className="system-exhibit system-list-only">{systemParameters.map((parameter) => <SystemParameter key={parameter.id} parameter={parameter} active={active} onSelect={selectParameter} onReset={resetParameter} />)}</div></section>
 }
 
 function SystemParameter({ parameter, active, onSelect, onReset }) {
@@ -267,7 +288,7 @@ function AboutFilm() {
     return () => { cancelAnimationFrame(frame); window.removeEventListener('resize', resize); window.removeEventListener('scroll', updateProgress) }
   }, [])
 
-  return <section className="about-film" id="about" ref={sectionRef}><div className="about-film-sticky"><div className="about-film-label section-frame"><SectionLabel number="02">About</SectionLabel></div><div className="about-film-stage"><canvas ref={canvasRef} aria-label="A scroll-driven evolution from one line into a generative formation" /><div className="about-film-copy" aria-live="polite">{aboutStages[stage].split('\\n').map((line, index) => <span key={`${stage}-${index}`}>{line}</span>)}</div></div></div></section>
+  return <section className="about-film" id="about" ref={sectionRef}><div className="about-film-sticky"><div className="about-film-label section-frame"><SectionLabel number="02">About</SectionLabel></div><div className="about-film-stage"><canvas ref={canvasRef} aria-label="A scroll-driven evolution from one line into a formation" /><div className="about-film-copy" aria-live="polite">{aboutStages[stage].split('\\n').map((line, index) => <span key={`${stage}-${index}`}>{line}</span>)}</div></div></div></section>
 }
 
 function FAQ() {
@@ -288,7 +309,7 @@ function FAQ() {
 }
 
 function Footer() {
-  return <footer className="footer section-frame"><div className="footer-top"><a className="wordmark" href="#top">The Line</a><span className="footer-note">© 2026</span><div className="footer-links"><a className="twitter-mark" href="https://x.com/thelinesart" target="_blank" rel="noreferrer" aria-label="The Line on Twitter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-6.77 7.74L23.2 22h-6.24l-4.89-6.39L6.48 22H3.36l7.24-8.28L2.8 2h6.4l4.42 5.84L18.9 2Zm-1.1 17.8h1.73L8.28 4.08H6.43L17.8 19.8Z" /></svg></a>{openSeaUrl && <a className="opensea-mark" href={openSeaUrl} target="_blank" rel="noreferrer" aria-label="The Line on OpenSea"><img src="/opensea-logo.png" alt="" /></a>}</div></div></footer>
+  return <footer className="footer section-frame"><div className="footer-top"><a className="wordmark" href="#top">The Line</a><span className="footer-note">© 2026</span><div className="footer-links"><Link href="/docs">Docs</Link><a className="twitter-mark" href="https://x.com/thelinesart" target="_blank" rel="noreferrer" aria-label="The Line on Twitter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-6.77 7.74L23.2 22h-6.24l-4.89-6.39L6.48 22H3.36l7.24-8.28L2.8 2h6.4l4.42 5.84L18.9 2Zm-1.1 17.8h1.73L8.28 4.08H6.43L17.8 19.8Z" /></svg></a>{openSeaUrl && <a className="opensea-mark" href={openSeaUrl} target="_blank" rel="noreferrer" aria-label="The Line on OpenSea"><img src="/opensea-logo.png" alt="" /></a>}</div></div></footer>
 }
 
 export default function Home() {

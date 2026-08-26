@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { formatUnits } from 'viem'
+import type { Connector } from 'wagmi'
 import { useAccount, useConnect, useSwitchChain } from 'wagmi'
 import { activeChain, MAX_SUPPLY, tokenUrl, txUrl } from './chain'
 import { MintAnimation } from './MintAnimation'
@@ -23,6 +24,61 @@ function Artwork() {
   return (
     <div className={styles.frame}>
       <img src={PRE_REVEAL} alt="The Line, unrevealed" />
+    </div>
+  )
+}
+
+function WalletDialog({
+  wallets,
+  onPick,
+  onClose,
+}: {
+  wallets: readonly Connector[]
+  onPick: (connector: Connector) => void
+  onClose: () => void
+}) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    // The page behind a dialog should not scroll under it.
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = previous
+    }
+  }, [onClose])
+
+  return (
+    <div
+      className={styles.overlay}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Select a wallet"
+      onClick={onClose}
+    >
+      {/* Clicks inside must not reach the overlay, or picking a wallet would
+          close the dialog before the choice registered. */}
+      <div className={styles.dialog} onClick={event => event.stopPropagation()}>
+        <div className={styles.dialogHead}>
+          <span>Select wallet</span>
+          <button type="button" onClick={onClose} aria-label="Close">
+            &times;
+          </button>
+        </div>
+        <ul className={styles.wallets}>
+          {wallets.map(connector => (
+            <li key={connector.uid}>
+              <button type="button" onClick={() => onPick(connector)}>
+                {connector.icon && <img src={connector.icon} alt="" />}
+                <span>{connector.name}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   )
 }
@@ -173,50 +229,30 @@ export default function MintPage() {
               ) : soldOut ? (
                 <p className={styles.status}>All 3,333 have been collected.</p>
               ) : !isConnected ? (
-                picking && wallets.length > 1 ? (
-                  <ul className={styles.wallets}>
-                    {wallets.map(connector => (
-                      <li key={connector.uid}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPicking(false)
-                            connect({ connector })
-                          }}
-                        >
-                          {connector.icon && <img src={connector.icon} alt="" />}
-                          <span>{connector.name}</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <>
-                    <button
-                      className={styles.button}
-                      type="button"
-                      disabled={connecting || wallets.length === 0}
-                      // One wallet is not a choice, so it does not get a menu.
-                      onClick={() =>
-                        wallets.length === 1 ? connect({ connector: wallets[0] }) : setPicking(true)
-                      }
-                    >
-                      {connecting ? 'CONNECTING' : wallets.length === 0 ? 'NO WALLET FOUND' : 'CONNECT WALLET'}
-                    </button>
-                    {/* Shown only when nothing was detected, so it never gets in
-                        the way of someone who already has a wallet. Mobile comes
-                        first: a phone visitor almost always owns a wallet — it is
-                        just an app, and this page is open in Safari or Chrome
-                        instead of inside it. Telling them to "install a wallet"
-                        would be the wrong advice for the likelier case. */}
-                    {wallets.length === 0 && (
-                      <p className={styles.note}>
-                        No wallet detected. On a phone, open this page inside your wallet
-                        app&apos;s own browser. On a computer, install a browser wallet and reload.
-                      </p>
-                    )}
-                  </>
-                )
+                <>
+                  <button
+                    className={styles.button}
+                    type="button"
+                    disabled={connecting || wallets.length === 0}
+                    // One wallet is not a choice, so it does not get a dialog.
+                    onClick={() =>
+                      wallets.length === 1 ? connect({ connector: wallets[0] }) : setPicking(true)
+                    }
+                  >
+                    {connecting ? 'CONNECTING' : wallets.length === 0 ? 'NO WALLET FOUND' : 'CONNECT WALLET'}
+                  </button>
+                  {/* Shown only when nothing was detected, so it never gets in
+                      the way of someone who already has a wallet. Mobile comes
+                      first: a phone visitor almost always owns a wallet — it is
+                      just an app, and this page is open in Safari or Chrome
+                      instead of inside it. */}
+                  {wallets.length === 0 && (
+                    <p className={styles.note}>
+                      No wallet detected. On a phone, open this page inside your wallet
+                      app&apos;s own browser. On a computer, install a browser wallet and reload.
+                    </p>
+                  )}
+                </>
               ) : mint.wrongNetwork ? (
                 <button
                   className={styles.button}
@@ -262,6 +298,17 @@ export default function MintPage() {
           )}
         </div>
       </section>
+
+      {picking && wallets.length > 1 && (
+        <WalletDialog
+          wallets={wallets}
+          onPick={connector => {
+            setPicking(false)
+            connect({ connector })
+          }}
+          onClose={() => setPicking(false)}
+        />
+      )}
 
       <button
         className={styles.soundToggle}

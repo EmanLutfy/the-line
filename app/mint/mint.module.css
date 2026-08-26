@@ -123,15 +123,21 @@
 
 /* Action -------------------------------------------------------------- */
 
+/* Silkscreen, already used for the trait rows on the homepage. Pixel faces
+   are drawn on a coarse grid, so the usual mono treatment works against them:
+   at 9px the strokes fall below one grid unit and go muddy, and wide tracking
+   pulls the blocks apart until the word stops being a word. Two sizes larger
+   and half the tracking is what keeps it reading as a machine label rather
+   than as a costume. */
 .button, .ghost {
   display: block;
   width: 100%;
   margin-top: 34px;
-  padding: 16px 12px;
+  padding: 15px 12px 14px;
   text-align: center;
   border-radius: 0;
-  font: 9px var(--small, monospace);
-  letter-spacing: .18em;
+  font: 11px/1 var(--pixel, monospace);
+  letter-spacing: .09em;
   text-transform: uppercase;
   cursor: pointer;
   text-decoration: none;
@@ -228,13 +234,64 @@
 
 @media (prefers-reduced-motion: reduce) {
   .pulse { animation: none; opacity: 1 }
+  .overlay, .dialog { animation: none }
 }
 
-/* Wallet picker. A list, not a modal — a dialog would darken the artwork and
-   import a visual language this site does not use anywhere else. */
+/* Wallet dialog. Built from the same parts as the trait dialog on the
+   homepage — the same dim, the same panel, the same hairline rules — so it
+   reads as this site opening a drawer rather than a wallet library taking the
+   screen over. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(5, 5, 5, .86);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  animation: overlayIn .22s ease;
+}
+.dialog {
+  width: min(360px, 100%);
+  background: #0b0b0b;
+  border: 1px solid #252525;
+  padding: 22px 24px 8px;
+  animation: dialogIn .26s cubic-bezier(.2, .7, .3, 1);
+}
+.dialogHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.dialogHead span {
+  font: 9px var(--small, monospace);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: #777;
+}
+.dialogHead button {
+  padding: 0 2px;
+  background: none;
+  border: 0;
+  color: #f5f5f5;
+  font-size: 24px;
+  font-weight: 300;
+  line-height: 1;
+  cursor: pointer;
+  transition: opacity .25s;
+}
+.dialogHead button:hover, .dialogHead button:focus-visible { opacity: .6; outline: none }
+
+@keyframes overlayIn { from { opacity: 0 } to { opacity: 1 } }
+@keyframes dialogIn {
+  from { opacity: 0; transform: translateY(10px) }
+  to   { opacity: 1; transform: none }
+}
+
 .wallets {
   width: 100%;
-  margin: 34px 0 0;
+  margin: 18px 0 0;
   padding: 0;
   list-style: none;
   border-top: 1px solid #232323;

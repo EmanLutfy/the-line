@@ -1,0 +1,284 @@
+/* Reference reading, not a landing page. The measure is held near 68 characters
+   and the contents rail stays put, because this is a document people come back
+   to and cite a numbered section from. */
+
+.page {
+  min-height: 100vh;
+  background: #000;
+  color: #f5f5f5;
+  color-scheme: dark;
+}
+
+.nav {
+  height: 78px;
+  padding: 0 clamp(22px, 6vw, 64px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.wordmark {
+  font: 400 20px/1 var(--display, Georgia, serif);
+  letter-spacing: .035em;
+  color: #f5f5f5;
+  text-decoration: none;
+  transition: opacity .3s;
+}
+.wordmark:hover, .wordmark:focus-visible { opacity: .65 }
+.navMeta {
+  font: 9px var(--small, monospace);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #777;
+}
+
+.shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: clamp(28px, 5vw, 56px) clamp(22px, 6vw, 64px) 120px;
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: clamp(36px, 6vw, 80px);
+  align-items: start;
+}
+
+/* Contents ------------------------------------------------------------- */
+
+.toc { position: sticky; top: 40px }
+.tocLabel {
+  display: block;
+  margin-bottom: 18px;
+  font: 9px var(--small, monospace);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: #5c5a57;
+}
+.toc ol { list-style: none; margin: 0; padding: 0 }
+.toc a {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 8px;
+  padding: 7px 0;
+  color: #8a8783;
+  font: 12px/1.4 var(--small, monospace);
+  letter-spacing: .02em;
+  text-decoration: none;
+  transition: color .25s;
+}
+.toc a span { color: #4f4d4a; font-variant-numeric: tabular-nums }
+.toc a:hover, .toc a:focus-visible { color: #f5f5f5; outline: none }
+
+/* Body ----------------------------------------------------------------- */
+
+.body { max-width: 68ch }
+
+/* Loud on purpose. A quiet note here is the same as no note. */
+.testnet {
+  margin: 0 0 34px !important;
+  padding: 16px 18px;
+  border: 1px solid #4a4540;
+  background: #0e0d0c;
+  font: 400 14px/1.65 var(--sans, Arial, sans-serif) !important;
+  color: #cfc9c1 !important;
+}
+.testnet strong {
+  display: block;
+  margin-bottom: 6px;
+  font: 10px var(--small, monospace);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: #f5f5f5;
+}
+
+.body h1 {
+  margin: 0;
+  font: 400 clamp(40px, 5.4vw, 66px)/1 var(--display, Georgia, serif);
+  letter-spacing: -.03em;
+}
+.standfirst {
+  margin: 22px 0 0;
+  font: 400 17px/1.7 var(--sans, Arial, sans-serif);
+  color: #8a8783;
+}
+
+.body section {
+  margin-top: clamp(52px, 7vw, 84px);
+  scroll-margin-top: 32px;
+}
+.body h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin: 0 0 22px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #232323;
+  font: 400 clamp(24px, 2.6vw, 31px)/1.2 var(--display, Georgia, serif);
+  letter-spacing: -.015em;
+}
+.body h2 span {
+  font: 11px var(--small, monospace);
+  letter-spacing: .12em;
+  color: #5c5a57;
+  font-variant-numeric: tabular-nums;
+}
+
+.body p {
+  margin: 0 0 18px;
+  font: 400 15.5px/1.75 var(--sans, Arial, sans-serif);
+  color: #b6b3af;
+}
+.body p strong, .body li strong { color: #f5f5f5; font-weight: 500 }
+.body em { font-style: italic }
+
+.body ul {
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid #1e1e1e;
+}
+.body li {
+  padding: 13px 0 13px 20px;
+  border-bottom: 1px solid #1e1e1e;
+  font: 400 15px/1.7 var(--sans, Arial, sans-serif);
+  color: #b6b3af;
+  position: relative;
+}
+.body li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 22px;
+  width: 8px;
+  height: 1px;
+  background: #4f4d4a;
+}
+
+.body code {
+  font: 13px var(--small, monospace);
+  color: #d8d5d1;
+  background: #131313;
+  padding: 2px 5px;
+  border-radius: 2px;
+}
+.body pre {
+  margin: 0 0 20px;
+  padding: 16px 18px;
+  background: #0b0b0b;
+  border-left: 1px solid #2c2c2c;
+  overflow-x: auto;
+  font: 12.5px/1.75 var(--small, monospace);
+  color: #b6b3af;
+  white-space: pre;
+}
+
+.hash {
+  font: 12.5px/1.8 var(--small, monospace) !important;
+  color: #f5f5f5 !important;
+  word-break: break-all;
+  padding: 14px 16px;
+  background: #0b0b0b;
+  border-left: 1px solid #2c2c2c;
+}
+.address { word-break: break-all }
+.pending { color: #6f6c68; font: 13px var(--small, monospace) }
+
+.arith {
+  padding: 14px 0 0;
+  border-top: 1px solid #232323;
+  font: 14px var(--small, monospace) !important;
+}
+
+/* Set apart because it is the one thing on this page a reader would be
+   right to push back on. Burying it in a paragraph would be the tell. */
+.caveat {
+  margin-top: 26px;
+  padding: 18px 20px;
+  background: #0b0b0b;
+  border-left: 2px solid #3a3a3a;
+  font-size: 14.5px !important;
+}
+
+/* Tables and lists ------------------------------------------------------ */
+
+.tableWrap { overflow-x: auto; margin: 0 0 22px }
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 13px var(--small, monospace);
+}
+.table th {
+  text-align: left;
+  padding: 0 24px 10px 0;
+  border-bottom: 1px solid #2c2c2c;
+  font-weight: 400;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #5c5a57;
+  font-size: 9px;
+}
+.table td {
+  padding: 12px 24px 12px 0;
+  border-bottom: 1px solid #1e1e1e;
+  color: #b6b3af;
+  font-variant-numeric: tabular-nums;
+}
+.table tr td:first-child { color: #f5f5f5 }
+
+.locks, .facts { margin: 0; border-top: 1px solid #232323 }
+.locks > div, .facts > div {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 20px;
+  padding: 15px 0;
+  border-bottom: 1px solid #1e1e1e;
+}
+.locks dt, .facts dt {
+  font: 12px var(--small, monospace);
+  color: #8a8783;
+}
+.facts dt {
+  font-size: 9px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #5c5a57;
+}
+.locks dd, .facts dd {
+  margin: 0;
+  font: 400 14.5px/1.65 var(--sans, Arial, sans-serif);
+  color: #b6b3af;
+}
+.facts dd { font-family: var(--small, monospace); font-size: 13px }
+
+.foot {
+  display: flex;
+  gap: 26px;
+  margin-top: 80px;
+  padding-top: 24px;
+  border-top: 1px solid #232323;
+}
+.foot a {
+  color: #8a8783;
+  font: 9px var(--small, monospace);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-bottom: 1px solid #2c2c2c;
+  padding-bottom: 5px;
+  transition: color .25s, border-color .25s;
+}
+.foot a:hover, .foot a:focus-visible { color: #f5f5f5; border-color: #f5f5f5; outline: none }
+
+@media (max-width: 900px) {
+  .nav { height: 68px; padding: 0 22px }
+  .shell {
+    grid-template-columns: 1fr;
+    gap: 34px;
+    padding: 24px 22px 90px;
+  }
+  .toc {
+    position: static;
+    padding-bottom: 26px;
+    border-bottom: 1px solid #232323;
+  }
+  .toc ol { columns: 2; column-gap: 24px }
+  .locks > div, .facts > div { grid-template-columns: 1fr; gap: 6px }
+}

@@ -21,6 +21,12 @@ import { keccak256 } from 'viem'
 
 const TOTAL = 3333
 
+// The per-token description is set here rather than carried through from the
+// source files. It is the one string that appears in every wallet and on every
+// marketplace listing, and `freezeMetadata()` makes it permanent — so it lives
+// in one place that can be reviewed, not in 3,333 files nobody re-reads.
+const DESCRIPTION = 'A minimalist study of line, space and formation.'
+
 function arg(name, fallback) {
   const i = process.argv.indexOf(`--${name}`)
   if (i !== -1 && process.argv[i + 1]) return process.argv[i + 1]
@@ -65,7 +71,7 @@ for (let id = 1; id <= TOTAL; id++) {
 
   writeFileSync(join(outMeta, `${id}.json`), JSON.stringify({
     name: meta.name,
-    description: meta.description,
+    description: DESCRIPTION,
     image: `${imageBase}${id}.png`,
     attributes,
   }, null, 2))

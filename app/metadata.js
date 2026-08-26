@@ -4,16 +4,16 @@
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001'),
   title: 'The Line.',
-  description: 'A minimalist generative study of line, space and formation. 3,333 unique works.',
+  description: 'A minimalist study of line, space and formation. 3,333 unique works.',
   openGraph: {
-    title: 'The Line — A generative study',
+    title: 'The Line — A study in line and space',
     description: '3,333 unique studies of line, space and formation.',
     type: 'website',
     images: ['/images/the-line-field.png'],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'The Line — A generative study',
+    title: 'The Line — A study in line and space',
     description: '3,333 unique studies of line, space and formation.',
     images: ['/images/the-line-field.png'],
   },

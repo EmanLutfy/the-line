@@ -4,11 +4,45 @@ import { defineChain } from 'viem'
  * Robinhood Chain. Everything the browser needs is public, so it all arrives
  * through NEXT_PUBLIC_ vars — there are no secrets on this page.
  */
+/**
+ * Robinhood publishes these alongside the chain id. They are the fallback and
+ * never the primary: shared, rate limited, and not ours to lean on. Only
+ * Robinhood's own endpoints belong here — an RPC can lie about what it reads,
+ * and a wrong `saleOpen` or `price` on the mint page is not a small error.
+ */
+const PUBLIC_RPC_MAINNET = 'https://rpc.mainnet.chain.robinhood.com'
+const PUBLIC_RPC_TESTNET = 'https://rpc.testnet.chain.robinhood.com'
+
+/**
+ * Primary first, fallback second, blanks dropped. An unset var must degrade to
+ * "one endpoint", not to "an endpoint that is the empty string" — viem would
+ * accept that and fail on every read. Setting the *_FALLBACK var to an empty
+ * string turns the fallback off; the list can never end up empty.
+ */
+function endpoints(primary: string | undefined, override: string | undefined, fallbackUrl: string): string[] {
+  const list = [primary, override ?? fallbackUrl]
+    .map((v) => v?.trim())
+    .filter((v): v is string => Boolean(v))
+  return Array.from(new Set(list.length ? list : [fallbackUrl]))
+}
+
+export const MAINNET_RPCS = endpoints(
+  process.env.NEXT_PUBLIC_RPC_URL_MAINNET,
+  process.env.NEXT_PUBLIC_RPC_URL_MAINNET_FALLBACK,
+  PUBLIC_RPC_MAINNET,
+)
+
+export const TESTNET_RPCS = endpoints(
+  process.env.NEXT_PUBLIC_RPC_URL_TESTNET,
+  process.env.NEXT_PUBLIC_RPC_URL_TESTNET_FALLBACK,
+  PUBLIC_RPC_TESTNET,
+)
+
 export const robinhoodMainnet = defineChain({
   id: 4663,
   name: 'Robinhood Chain',
   nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-  rpcUrls: { default: { http: [process.env.NEXT_PUBLIC_RPC_URL_MAINNET || ''] } },
+  rpcUrls: { default: { http: MAINNET_RPCS } },
   blockExplorers: {
     default: { name: 'Blockscout', url: 'https://robinhoodchain.blockscout.com' },
   },
@@ -18,7 +52,7 @@ export const robinhoodTestnet = defineChain({
   id: 46630,
   name: 'Robinhood Chain Testnet',
   nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-  rpcUrls: { default: { http: [process.env.NEXT_PUBLIC_RPC_URL_TESTNET || ''] } },
+  rpcUrls: { default: { http: TESTNET_RPCS } },
   blockExplorers: {
     default: { name: 'Explorer', url: 'https://explorer.testnet.chain.robinhood.com' },
   },

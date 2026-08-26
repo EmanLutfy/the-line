@@ -3,8 +3,9 @@
 import { ReactNode, useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider, createConfig, http } from 'wagmi'
+import { fallback } from 'viem'
 import { injected } from 'wagmi/connectors'
-import { robinhoodMainnet, robinhoodTestnet } from './chain'
+import { MAINNET_RPCS, TESTNET_RPCS, robinhoodMainnet, robinhoodTestnet } from './chain'
 
 /**
  * Scoped to /mint by app/mint/layout.tsx on purpose. Wallet libraries are the
@@ -23,9 +24,14 @@ import { robinhoodMainnet, robinhoodTestnet } from './chain'
 const config = createConfig({
   chains: [robinhoodMainnet, robinhoodTestnet],
   connectors: [injected()],
+  // Each chain gets its own endpoints, primary first. viem's `fallback` moves
+  // to the next URL on a transport error, so if the metered key is throttled or
+  // its allowlist rejects a request, reads keep working on Robinhood's public
+  // endpoint instead of the page filling with em-dashes on launch night. The
+  // chain itself is never the thing at risk here — only our view of it.
   transports: {
-    [robinhoodMainnet.id]: http(),
-    [robinhoodTestnet.id]: http(),
+    [robinhoodMainnet.id]: fallback(MAINNET_RPCS.map((url) => http(url))),
+    [robinhoodTestnet.id]: fallback(TESTNET_RPCS.map((url) => http(url))),
   },
   ssr: true,
 })

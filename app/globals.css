@@ -92,7 +92,17 @@
 .nav-actions{display:flex;align-items:center;gap:10px}
 .nav-docs{color:var(--muted);border-color:#232323}
 .nav-docs:hover,.nav-docs:focus-visible{background:var(--fg);color:#000;border-color:var(--fg)}
-@media(max-width:480px){.nav-docs{display:none}}
+/* Not a link, because there is nowhere to go. A disabled anchor still takes
+   focus and still looks clickable on touch, which reads as a broken button
+   rather than an unfinished one. */
+/* Now a real button, so it takes a button's reset — the UA background and font
+   would otherwise show through .nav-draw. It stays the dimmest of the three: it
+   opens something, but it is not a place you can go yet. */
+.nav-soon{background:none;color:#585858;border-color:#1f1f1f;cursor:pointer}
+.nav-soon:hover,.nav-soon:focus-visible{color:#8a8a8a;border-color:#333;outline:none}
+.soon-dialog{position:relative;width:min(380px,100%);background:#0b0b0b;border:1px solid var(--line);padding:clamp(28px,5vw,40px);text-align:left}
+.soon-dialog h3{font:400 clamp(46px,8vw,64px)/.9 var(--display);letter-spacing:-.05em;margin:18px 0 0}
+@media(max-width:480px){.nav-docs,.nav-soon{display:none}}
 /* An answer can hold a button now, so the fade moves from the paragraph to the
    whole block — otherwise the text and the button would arrive separately. */
 .faq .faq-answer p{opacity:1;transform:none;transition:none}

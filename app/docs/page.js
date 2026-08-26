@@ -30,7 +30,8 @@ const sections = [
   ['07', 'What the burn does', 'burn'],
   ['08', 'What you are trusting', 'trust'],
   ['09', 'The locks', 'locks'],
-  ['10', 'Reference', 'reference'],
+  ['10', 'Staking', 'staking'],
+  ['11', 'Reference', 'reference'],
 ]
 
 const rarity = [
@@ -356,8 +357,26 @@ provenance   = keccak256(
             </dl>
           </section>
 
+          <section id="staking">
+            <h2><span>10</span> Staking</h2>
+            <p>
+              Owning a Line does not have to end at collecting it. After the mint, the
+              intention is that holders can stake their work and put their Line to use.
+            </p>
+            <ul>
+              <li>Stake your Line.</li>
+              <li>Keep ownership of the NFT.</li>
+              <li>Earn the rewards defined by the staking mechanism.</li>
+            </ul>
+            <p>
+              The idea is simple: collect the art, then decide whether to leave it in your
+              wallet or put it to work. Your Line remains yours while staked, subject to
+              the rules of the staking contract.
+            </p>
+          </section>
+
           <section id="reference">
-            <h2><span>10</span> Reference</h2>
+            <h2><span>11</span> Reference</h2>
             <dl className={styles.facts}>
               <div><dt>Collection</dt><dd>The Line · 3,333 · ERC-721</dd></div>
               <div><dt>Token ids</dt><dd>1 – 3333</dd></div>

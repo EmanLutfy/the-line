@@ -67,10 +67,22 @@ function IntroLoader({ onComplete }) {
 
 function Nav({ open, setOpen }) {
   const links = [['Collection', '#collection'], ['FAQ', '#faq'], ['Docs', '/docs']]
+  const [soon, setSoon] = useState(false)
+  // Same contract as the artwork modal: Escape closes it and the page behind
+  // stops scrolling while it is up.
+  useEffect(() => {
+    if (!soon) return undefined
+    const closeOnEscape = (event) => event.key === 'Escape' && setSoon(false)
+    document.addEventListener('keydown', closeOnEscape)
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.removeEventListener('keydown', closeOnEscape); document.body.style.overflow = previousOverflow }
+  }, [soon])
   return <header className="nav-wrap">
     <div className="nav-right"><a className="twitter-mark" href="https://x.com/thelinesart" target="_blank" rel="noreferrer" aria-label="The Line on Twitter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-6.77 7.74L23.2 22h-6.24l-4.89-6.39L6.48 22H3.36l7.24-8.28L2.8 2h6.4l4.42 5.84L18.9 2Zm-1.1 17.8h1.73L8.28 4.08H6.43L17.8 19.8Z" /></svg></a>{openSeaUrl && <a className="opensea-mark" href={openSeaUrl} target="_blank" rel="noreferrer" aria-label="The Line on OpenSea"><img src="/opensea-logo.png" alt="" /></a>}<button className="menu-button" onClick={() => setOpen(!open)} aria-expanded={open} aria-label="Toggle navigation"><span /><span /></button></div>
     <nav className={open ? 'nav-links is-open' : 'nav-links'}>{links.map(([label, href]) => href.startsWith('/') ? <Link key={label} href={href} onClick={() => setOpen(false)}>{label}</Link> : <a key={label} href={href} onClick={() => setOpen(false)}>{label}</a>)}</nav>
-    <div className="nav-actions"><Link className="nav-draw" href="/mint">Mint</Link><Link className="nav-draw nav-docs" href="/docs">Docs</Link></div>
+    <div className="nav-actions"><Link className="nav-draw" href="/mint">Mint</Link><button className="nav-draw nav-soon" type="button" onClick={() => setSoon(true)}>Stake</button><Link className="nav-draw nav-docs" href="/docs">Docs</Link></div>
+    {soon && <div className="trait-modal" role="dialog" aria-modal="true" aria-label="Staking" onClick={() => setSoon(false)}><div className="soon-dialog" onClick={(event) => event.stopPropagation()}><button className="trait-close" type="button" onClick={() => setSoon(false)} aria-label="Close">×</button><span className="micro-label">Staking</span><h3>Wen ?</h3></div></div>}
   </header>
 }
 

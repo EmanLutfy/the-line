@@ -150,6 +150,12 @@ export default function DocsPage() {
               The whole collection is revealed at once, after the mint. Everything flips in
               a single transaction.
             </p>
+            <p>
+              <strong>Revealing closes the mint.</strong> The mint contract refuses to run
+              once the collection is revealed — not by convention, but because it checks.
+              Otherwise the next id would be knowable and its artwork public, and a buyer
+              could mint only when the next piece happened to be a good one.
+            </p>
           </section>
 
           <section id="provenance">
@@ -262,6 +268,16 @@ provenance   = keccak256(
                 points at.
               </li>
               <li>The provenance hash is immutable from deployment.</li>
+              <li>
+                The secondary-sale royalty cannot exceed 10%. Without that ceiling an owner
+                could set 100% after every other lock and quietly make each token
+                unsellable.
+              </li>
+              <li>
+                Ownership cannot be renounced. Several states here are only recoverable by
+                the owner, and abandoning the contract in one of them would be
+                unrecoverable for everyone.
+              </li>
             </ul>
 
             <p>These are the things the owner <em>can</em> do, stated plainly:</p>
@@ -279,7 +295,23 @@ provenance   = keccak256(
             </ul>
 
             <p className={styles.caveat}>
-              One residual point, stated rather than buried: <strong>the reveal is
+              These contracts have <strong>not been through an independent security
+              audit</strong>. They are small, they hold nobody&apos;s funds — payment moves
+              straight from buyer to burn, so there is no pool to drain — and they are
+              verified on the block explorer so anyone can read them. But no third party
+              has reviewed them, and you should weigh that.
+            </p>
+
+            <p className={styles.caveat}>
+              <strong>These contracts have not had an independent security audit.</strong>{' '}
+              They are small, they hold nobody&apos;s funds — payment moves straight from
+              buyer to burn — and they are verified on the block explorer so anyone can
+              read them. But no third party has reviewed them, and you should weigh that
+              the same way you would weigh anything else on this page.
+            </p>
+
+            <p className={styles.caveat}>
+              A second residual point, stated rather than buried: <strong>the reveal is
               owner-controlled and is not gated on selling out.</strong> A contract that
               refused to reveal before 3,333 would sound stronger, but a mint that stalled
               at 3,332 could then never be revealed by anyone, ever, and every holder would
@@ -306,15 +338,19 @@ provenance   = keccak256(
               <div>
                 <dt>lockConfig()</dt>
                 <dd>
-                  Fixes the price and the accepted token. Called after a real mint has been
-                  tested, before the sale opens to anyone else.
+                  Fixes the price, the accepted token and the burn mode. The contract
+                  refuses to run until at least one token has actually been minted — the
+                  only on-chain proof that this exact configuration completes a mint.
+                  Locking a burn path the real token rejects would leave the collection
+                  unmintable forever.
                 </dd>
               </div>
               <div>
                 <dt>freezeMetadata()</dt>
                 <dd>
-                  Fixes what every token points at, forever. Called after the reveal, once
-                  the metadata has been checked.
+                  Fixes what every token points at, forever. The contract refuses to run
+                  before the reveal: freezing first would strand all 3,333 on the
+                  placeholder permanently, with no way back for anyone.
                 </dd>
               </div>
             </dl>

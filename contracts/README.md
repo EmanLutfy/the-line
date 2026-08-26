@@ -88,17 +88,27 @@ forge script script/Deploy.s.sol:Deploy \
 Then, in order:
 
 ```
-nft.lockMinter()                                  # sale contract is now the only minter, forever
-sale.configure(LINE_ADDRESS, 150000e18, true)     # third arg: does $LINE have burnFrom?
-sale.lockConfig()                                 # price and token can never move again
+nft.lockMinter()                              # the sale contract is the only minter, forever
+sale.configure(LINE, 150000e18, useBurnFrom)  # refuses while the sale is open
+sale.setSaleOpen(true)
+  ...mint one, with your own wallet...        # lockConfig will not run until you have
+sale.setSaleOpen(false)
+sale.lockConfig()                             # price, token and burn mode fixed forever
 sale.setSaleOpen(true)
 ```
+
+The order is not a suggestion. `lockConfig` reverts with `ConfigNotProven` until at
+least one token has been minted, because a completed mint is the only on-chain
+evidence that this token, this price and this burn mode actually work together.
+Locking a burn path the real $LINE rejects, with the minter already locked, would
+leave the collection permanently unmintable.
 
 After sold out:
 
 ```
-nft.reveal("ipfs://<METADATA_CID>/")
-nft.freezeMetadata()                              # one-way; nothing can be swapped after this
+nft.reveal("ipfs://<METADATA_CID>/")          # also closes the mint, permanently
+  ...open a few tokenURIs and check them...
+nft.freezeMetadata()                          # one-way; refuses before a reveal
 ```
 
 ## Royalties
@@ -112,8 +122,13 @@ changeable at any time.
 ```
 nft.setDefaultRoyalty(<wallet>, 500)   # 500 = 5%, denominator is 10000
 nft.setDefaultRoyalty(<wallet>, 250)   # 2.5%
-nft.deleteDefaultRoyalty()             # none at all
+nft.setDefaultRoyalty(<wallet>, 0)     # none at all
 ```
+
+Capped at 10%. There is no `deleteDefaultRoyalty`: deleting leaves a contract
+that still advertises ERC-2981 while returning a zero receiver, which reverts on
+any marketplace paying out in a token that refuses transfers to address(0). A
+zero rate with a real receiver says the same thing and cannot break.
 
 It deploys pointing at the owner at 5%. Move it to a dedicated payout wallet
 once that wallet exists. Generate that key yourself — `cast wallet new`, or a
@@ -128,6 +143,16 @@ anyone, ever: holders would be left owning the pre-reveal image permanently,
 with no owner call, upgrade or override able to fix it. The provenance hash is
 what actually constrains the owner here — it proves the artwork behind every id
 was fixed before the sale, whenever the reveal happens.
+
+Revealing **closes the mint**, enforced by the sale contract rather than left to
+discipline. Once the artwork is public the next id is knowable and its metadata
+fetchable, so a buyer could mint only when the next piece is a good one and leave
+the rest permanently unsold. `mint()` reverts with `CollectionRevealed` from that
+moment on.
+
+`freezeMetadata()` refuses to run before a reveal, for the mirror reason: freezing
+first would make `reveal` and every URI setter revert forever, stranding all 3,333
+on the placeholder.
 
 ## Two things to decide before mainnet
 
@@ -156,7 +181,21 @@ that constant is wrong by orders of magnitude.
   the owner
 - `contractURI` survives `freezeMetadata`, because a storefront banner is not
   the artwork
+- freezing before a reveal is refused, and so is revealing after a freeze
+- the mint shuts itself once the collection is revealed
+- `lockConfig` is refused until a real mint has cleared the burn path
+- a units slip (150000 rather than 150000e18) is refused rather than priced
+- a token whose `burnFrom` burns the caller instead of the named account cannot
+  fund a free mint from the contract's own stray balance
+- the minter cannot be locked to an EOA, and ownership cannot be renounced
 
-## Not done yet
+## Not audited
 
-Not audited. Not deployed. Testnet only until both change.
+Three independent adversarial reviews were run over these contracts and their
+findings are fixed above — including a permanent brick (`freezeMetadata` before
+`reveal`), a fairness hole (minting against revealed artwork), and a missing
+ERC-4906 that would have made the reveal invisible to marketplaces.
+
+That is not an audit. No third party is accountable for this code. The
+collection's public documentation says so plainly rather than leaving collectors
+to assume otherwise.

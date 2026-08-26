@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { formatUnits } from 'viem'
 import type { Connector } from 'wagmi'
 import { useAccount, useConnect, useSwitchChain } from 'wagmi'
-import { activeChain, MAX_SUPPLY, tokenUrl, txUrl } from './chain'
+import { activeChain, MAX_SUPPLY, swapUrl, tokenUrl, txUrl } from './chain'
 import { MintAnimation } from './MintAnimation'
 import { useMint } from './useMint'
 import styles from './mint.module.css'
@@ -136,6 +136,12 @@ export default function MintPage() {
 
   const priceLabel = price !== undefined ? amount(price, decimals) : FALLBACK_PRICE
 
+  // Telling someone they are short is only half an answer. The shortfall is
+  // the number they actually need, and the exchange is where they get it.
+  const short = balance !== undefined && price !== undefined && balance < price
+  const shortfall = short ? amount(price! - balance!, decimals) : null
+  const swap = swapUrl()
+
   return (
     <main className={styles.page}>
       <header className={styles.nav}>
@@ -263,6 +269,9 @@ export default function MintPage() {
                 </button>
               ) : (
                 <>
+                  {/* The primary action never moves. A button that changes
+                      meaning while staying in the same place is how someone
+                      pressing from memory presses the wrong thing. */}
                   <button
                     className={styles.button}
                     type="button"
@@ -271,10 +280,20 @@ export default function MintPage() {
                   >
                     BURN &amp; COLLECT
                   </button>
-                  {balance !== undefined && !mint.hasEnough && (
-                    <p className={styles.status}>{priceLabel} $LINE required.</p>
+                  {/* The way out, offered only when it is the thing that is
+                      actually in the way. */}
+                  {short && swap && (
+                    <a className={styles.ghost} href={swap} target="_blank" rel="noreferrer">
+                      GET $LINE
+                    </a>
                   )}
-                  {mint.hasEnough && mint.saleOpen === false && (
+                  {short && (
+                    <p className={styles.status}>
+                      {shortfall} $LINE short.
+                      {swap ? ' Swap, then come back to collect.' : ''}
+                    </p>
+                  )}
+                  {!short && mint.saleOpen === false && (
                     <p className={styles.status}>The mint is not open.</p>
                   )}
                   {mint.paused && <p className={styles.status}>The mint is paused.</p>}

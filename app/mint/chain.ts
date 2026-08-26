@@ -57,6 +57,22 @@ export function tokenUrl(tokenId: bigint | number): string {
   return activeChain.blockExplorers.default.url
 }
 
+/**
+ * Where to send someone who is short of $LINE. Configured as a template with
+ * a {token} placeholder rather than hardcoded, because the exchange holding
+ * the pool is not known yet and should never require a code change:
+ *
+ *   NEXT_PUBLIC_SWAP_URL=https://somedex.xyz/swap?outputCurrency={token}
+ *
+ * Empty means the button is not shown at all. A link that goes nowhere useful
+ * is worse than no link on the one screen where someone is already stuck.
+ */
+export function swapUrl(): string | undefined {
+  const template = process.env.NEXT_PUBLIC_SWAP_URL
+  if (!template || !lineAddress) return undefined
+  return template.replace('{token}', lineAddress)
+}
+
 export function txUrl(hash: string): string {
   return `${activeChain.blockExplorers.default.url}/tx/${hash}`
 }

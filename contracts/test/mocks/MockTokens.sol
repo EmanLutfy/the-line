@@ -61,6 +61,23 @@ contract MockLyingBurner is ERC20 {
     function burnFrom(address, uint256) external {}
 }
 
+/// `burnFrom(account, amount)` that ignores `account` and burns from the
+/// caller instead — a real pattern in the wild. Total supply falls by exactly
+/// the amount, so a sink-only check passes while the payer never paid.
+contract MockSelfBurner is ERC20 {
+    constructor() ERC20("Self", "SELF") {
+        _mint(msg.sender, 1_000_000_000 ether);
+    }
+
+    function mintTo(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
+
+    function burnFrom(address, uint256 amount) external {
+        _burn(msg.sender, amount);
+    }
+}
+
 /// Tries to mint a second time from inside onERC721Received.
 contract ReentrantBuyer is IERC721Receiver {
     address public target;

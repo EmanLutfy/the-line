@@ -153,7 +153,7 @@
 }
 
 .body code {
-  font: 13px var(--small, monospace);
+  font: 13px var(--mono, monospace);
   color: #d8d5d1;
   background: #131313;
   padding: 2px 5px;
@@ -165,21 +165,21 @@
   background: #0b0b0b;
   border-left: 1px solid #2c2c2c;
   overflow-x: auto;
-  font: 12.5px/1.75 var(--small, monospace);
+  font: 12.5px/1.75 var(--mono, monospace);
   color: #b6b3af;
   white-space: pre;
 }
 
 .hash {
-  font: 12.5px/1.8 var(--small, monospace) !important;
+  font: 12.5px/1.8 var(--mono, monospace) !important;
   color: #f5f5f5 !important;
   word-break: break-all;
   padding: 14px 16px;
   background: #0b0b0b;
   border-left: 1px solid #2c2c2c;
 }
-.address { word-break: break-all }
-.pending { color: #6f6c68; font: 13px var(--small, monospace) }
+.address { word-break: break-all; font-family: var(--mono, monospace) }
+.pending { color: #6f6c68; font: 13px var(--mono, monospace) }
 
 .arith {
   padding: 14px 0 0;
@@ -203,7 +203,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font: 13px var(--small, monospace);
+  font: 13px var(--mono, monospace);
 }
 .table th {
   text-align: left;
@@ -246,7 +246,7 @@
   font: 400 14.5px/1.65 var(--sans, Arial, sans-serif);
   color: #b6b3af;
 }
-.facts dd { font-family: var(--small, monospace); font-size: 13px }
+.facts dd { font-family: var(--mono, monospace); font-size: 13px }
 
 .foot {
   display: flex;

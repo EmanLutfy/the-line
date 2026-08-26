@@ -11,9 +11,14 @@ interface IBurnableERC20 {
     function burnFrom(address account, uint256 amount) external;
 }
 
+interface IERC20Decimals {
+    function decimals() external view returns (uint8);
+}
+
 interface ITheLine {
     function mintNext(address to) external returns (uint256);
     function totalMinted() external view returns (uint256);
+    function revealed() external view returns (bool);
     function MAX_SUPPLY() external view returns (uint256);
 }
 
@@ -21,9 +26,9 @@ interface ITheLine {
 /// @notice Burn $LINE, receive the next work in the collection.
 /// @dev There is no randomness anywhere in this contract, and that is the
 ///      point: ids are handed out strictly in order, so there is no roll to
-///      re-run, no result to peek at, and no ordering for anyone to game. What
-///      keeps the sale fair is that the artwork behind every id stays hidden
-///      until the collection is revealed.
+///      re-run and no result to peek at. What keeps the sale fair is that the
+///      artwork behind every id stays hidden until the collection is revealed
+///      — which is why `mint` refuses to run once it has been.
 ///
 ///      This contract never custodies $LINE. Tokens move straight from the
 ///      buyer to a burn, never into this address.
@@ -40,8 +45,8 @@ contract LineMint is Ownable2Step, Pausable, ReentrancyGuard {
 
     /// @notice True when $LINE exposes `burnFrom` (a real supply reduction).
     ///         False falls back to sending to an address nobody holds a key
-    ///         for — the tokens leave circulation either way, but only the
-    ///         first path lowers `totalSupply()`.
+    ///         for. Both are verified at mint time; neither can prove the token
+    ///         contract itself is honest.
     bool public useBurnFrom;
 
     bool public saleOpen;
@@ -52,12 +57,17 @@ contract LineMint is Ownable2Step, Pausable, ReentrancyGuard {
     mapping(address => uint256) public mintedBy;
 
     error SaleClosed();
+    error SaleIsOpen();
     error TokenNotConfigured();
     error PriceNotSet();
+    error PriceImplausible();
     error ConfigIsLocked();
+    error ConfigNotProven();
     error WalletLimitReached();
     error BurnFailed();
+    error CollectionRevealed();
     error ZeroAddress();
+    error RenounceDisabled();
 
     event Configured(address indexed token, uint256 price, bool useBurnFrom);
     event ConfigLocked();
@@ -81,6 +91,12 @@ contract LineMint is Ownable2Step, Pausable, ReentrancyGuard {
     function mint() external nonReentrant whenNotPaused returns (uint256 tokenId) {
         if (!saleOpen) revert SaleClosed();
 
+        // Once the artwork is public, an in-order sale stops being a sale.
+        // The next id is knowable from `totalMinted()`, so a buyer could read
+        // the metadata for it and mint only when the next piece is a good one,
+        // leaving the rest permanently unsold. Revealing closes the mint.
+        if (nft.revealed()) revert CollectionRevealed();
+
         IERC20 token = lineToken;
         if (address(token) == address(0)) revert TokenNotConfigured();
 
@@ -102,58 +118,91 @@ contract LineMint is Ownable2Step, Pausable, ReentrancyGuard {
     }
 
     /// @dev $LINE will be deployed by a launchpad we do not control, so the
-    ///      effect of the call is measured rather than assumed. A silently
-    ///      no-op `burnFrom`, or a token that skims a fee in transit, fails
-    ///      here instead of handing out a free mint.
+    ///      effect of the call is measured rather than assumed — on both sides.
     ///
-    ///      The measurement is taken at the destination, never at the payer.
-    ///      Checking that the payer's balance fell by `amount` looks equivalent
-    ///      and is not: a fee-on-transfer token takes its cut out of the
-    ///      transfer, so the payer loses the full `amount` while the burn
-    ///      address receives less and the difference lands in a live fee
-    ///      wallet. What has to be proven is that the tokens left circulation,
-    ///      which only the sink can show.
+    ///      The sink side (supply fell, or the dead address received) is what
+    ///      catches a token that skims a fee in transit: the payer loses the
+    ///      full amount while the burn address receives less, so a payer-only
+    ///      check would wave that through.
+    ///
+    ///      The payer side is what catches a token whose `burnFrom(account, x)`
+    ///      ignores `account` and burns from `msg.sender` instead — a real
+    ///      pattern in the wild. Against one of those, a sink-only check passes
+    ///      while this contract's own stray balance funds a free mint.
+    ///
+    ///      Neither proves the token contract is honest. A token can report a
+    ///      lower `totalSupply` while crediting the amount somewhere spendable,
+    ///      and nothing observable from here can tell the difference. That
+    ///      residual is stated in the collection's documentation rather than
+    ///      pretended away.
     function _burnFrom(IERC20 token, address from, uint256 amount) private {
+        uint256 payerBefore = token.balanceOf(from);
+
         if (useBurnFrom) {
-            // A real burn lowers total supply by exactly the amount.
             uint256 supplyBefore = token.totalSupply();
             IBurnableERC20(address(token)).burnFrom(from, amount);
             uint256 supplyAfter = token.totalSupply();
             if (supplyAfter > supplyBefore || supplyBefore - supplyAfter != amount) revert BurnFailed();
         } else {
-            // No burn entrypoint, so the dead address must receive every unit.
             uint256 deadBefore = token.balanceOf(DEAD);
             token.safeTransferFrom(from, DEAD, amount);
             uint256 deadAfter = token.balanceOf(DEAD);
             if (deadAfter < deadBefore || deadAfter - deadBefore != amount) revert BurnFailed();
         }
+
+        uint256 payerAfter = token.balanceOf(from);
+        if (payerAfter > payerBefore || payerBefore - payerAfter != amount) revert BurnFailed();
     }
 
     /* ------------------------------------------------------------- admin */
 
-    /// @notice Point the sale at the $LINE contract and set the price. Callable
-    ///         until `lockConfig`, because the token does not exist yet.
+    /// @notice Point the sale at the $LINE contract and set the price.
+    /// @dev Refuses to run while the sale is open. Buyers hold standing
+    ///      approvals, and a price change mid-sale would let a pending `mint`
+    ///      execute at a number nobody agreed to.
     function configure(address token_, uint256 price_, bool useBurnFrom_) external onlyOwner {
         if (configLocked) revert ConfigIsLocked();
+        if (saleOpen) revert SaleIsOpen();
         if (token_ == address(0)) revert ZeroAddress();
+        if (price_ == 0) revert PriceNotSet();
+
+        // A units slip is the most expensive typo available here: entering
+        // 150000 instead of 150000e18 prices the whole collection at dust and
+        // there is no undo once anyone has minted. One whole token is a floor
+        // low enough never to block a real configuration and high enough to
+        // catch a missing exponent. Tokens without `decimals()` skip the check
+        // rather than being locked out.
+        try IERC20Decimals(token_).decimals() returns (uint8 decimals) {
+            if (decimals > 0 && price_ < 10 ** decimals) revert PriceImplausible();
+        } catch {}
+
         lineToken = IERC20(token_);
         price = price_;
         useBurnFrom = useBurnFrom_;
         emit Configured(token_, price_, useBurnFrom_);
     }
 
-    /// @notice One-way. After this the token address and the price can never
-    ///         move, so nobody has to trust the owner not to raise the cost
-    ///         mid-sale.
+    /// @notice One-way. After this the token address, the price and the burn
+    ///         mode can never move.
+    /// @dev Requires at least one token to have been minted already. That is
+    ///      the only on-chain proof that this exact configuration — this token,
+    ///      this price, this burn mode — actually completes a mint. Locking
+    ///      before that could freeze a burn path the real $LINE rejects, and
+    ///      with the minter locked on the NFT side there would be no way to
+    ///      deploy a replacement. The whole collection would be unmintable.
     function lockConfig() external onlyOwner {
+        if (configLocked) revert ConfigIsLocked();
         if (address(lineToken) == address(0)) revert TokenNotConfigured();
         if (price == 0) revert PriceNotSet();
+        if (nft.totalMinted() == 0) revert ConfigNotProven();
         configLocked = true;
         emit ConfigLocked();
     }
 
+    /// @dev Outside `lockConfig` on purpose. The lock exists so nobody has to
+    ///      trust the owner over price; a wallet cap is a distribution control,
+    ///      and freezing it low would leave no way to clear the tail of a mint.
     function setMaxPerWallet(uint256 max_) external onlyOwner {
-        if (configLocked) revert ConfigIsLocked();
         maxPerWallet = max_;
         emit MaxPerWalletSet(max_);
     }
@@ -179,6 +228,13 @@ contract LineMint is Ownable2Step, Pausable, ReentrancyGuard {
     function rescueERC20(address token_, address to, uint256 amount) external onlyOwner {
         if (to == address(0)) revert ZeroAddress();
         IERC20(token_).safeTransfer(to, amount);
+    }
+
+    /// @dev Disabled. Renouncing while the sale is closed or paused would leave
+    ///      no one able to open it, and the NFT's locked minter means no
+    ///      replacement sale contract can ever be authorised.
+    function renounceOwnership() public pure override {
+        revert RenounceDisabled();
     }
 
     /* ------------------------------------------------------------- views */

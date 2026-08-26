@@ -4,8 +4,14 @@ pragma solidity 0.8.24;
 import {Test} from "forge-std/Test.sol";
 import {TheLine} from "../src/TheLine.sol";
 import {LineMint} from "../src/LineMint.sol";
-import {MockLine, MockNoBurn, MockFeeToken, MockLyingBurner, ReentrantBuyer} from "./mocks/MockTokens.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {
+    MockLine,
+    MockNoBurn,
+    MockFeeToken,
+    MockLyingBurner,
+    MockSelfBurner,
+    ReentrantBuyer
+} from "./mocks/MockTokens.sol";
 
 contract LineMintTest is Test {
     TheLine internal nft;
@@ -45,6 +51,16 @@ contract LineMintTest is Test {
         line.approve(address(sale), type(uint256).max);
     }
 
+    /// `configure` refuses to run while the sale is open, so swapping the token
+    /// under test takes the sale down and back up.
+    function _reconfigure(address token, uint256 price_, bool burnFrom_) internal {
+        vm.startPrank(owner);
+        sale.setSaleOpen(false);
+        sale.configure(token, price_, burnFrom_);
+        sale.setSaleOpen(true);
+        vm.stopPrank();
+    }
+
     /* ------------------------------------------------------------- happy */
 
     function test_MintBurnsAndAssignsIdOne() public {
@@ -74,9 +90,7 @@ contract LineMintTest is Test {
     function test_DeadAddressPathWhenTokenCannotBurn() public {
         MockNoBurn nb = new MockNoBurn();
         nb.mintTo(alice, PRICE);
-
-        vm.prank(owner);
-        sale.configure(address(nb), PRICE, false);
+        _reconfigure(address(nb), PRICE, false);
 
         vm.startPrank(alice);
         nb.approve(address(sale), PRICE);
@@ -150,7 +164,78 @@ contract LineMintTest is Test {
         assertEq(sale.mint(), 3);
     }
 
+    /// The cap is a distribution control, not an economic promise, so freezing
+    /// it with the price would leave no way to clear the tail of a mint.
+    function test_MaxPerWalletStaysAdjustableAfterLock() public {
+        vm.prank(alice);
+        sale.mint();
+
+        vm.startPrank(owner);
+        sale.lockConfig();
+        sale.setMaxPerWallet(5);
+        vm.stopPrank();
+
+        assertEq(sale.maxPerWallet(), 5);
+    }
+
+    /* -------------------------------------------------- reveal closes mint */
+
+    /// Once the artwork is public, the next id is knowable and its metadata is
+    /// fetchable — a buyer could mint only when the next piece is a good one
+    /// and leave the rest unsold forever.
+    function test_MintIsClosedOnceRevealed() public {
+        vm.prank(alice);
+        sale.mint();
+
+        vm.prank(owner);
+        nft.reveal("ipfs://REVEALED/");
+
+        vm.prank(bob);
+        vm.expectRevert(LineMint.CollectionRevealed.selector);
+        sale.mint();
+    }
+
+    /* ----------------------------------------------------- config hygiene */
+
+    /// Buyers hold standing approvals. A price change while the sale is live
+    /// would let a pending mint execute at a number nobody agreed to.
+    function test_ConfigureRefusedWhileSaleIsOpen() public {
+        vm.prank(owner);
+        vm.expectRevert(LineMint.SaleIsOpen.selector);
+        sale.configure(address(line), PRICE, true);
+    }
+
+    /// 150000 instead of 150000e18 prices the whole collection at dust, and
+    /// there is no undo once anyone has minted.
+    function test_ImplausiblePriceRejected() public {
+        vm.startPrank(owner);
+        sale.setSaleOpen(false);
+        vm.expectRevert(LineMint.PriceImplausible.selector);
+        sale.configure(address(line), 150_000, true);
+        vm.stopPrank();
+    }
+
+    function test_ZeroPriceRejected() public {
+        vm.startPrank(owner);
+        sale.setSaleOpen(false);
+        vm.expectRevert(LineMint.PriceNotSet.selector);
+        sale.configure(address(line), 0, true);
+        vm.stopPrank();
+    }
+
+    /// Locking a burn path the real token rejects would make the collection
+    /// unmintable forever, with the minter already locked on the NFT side.
+    /// One completed mint is the only on-chain proof the path works.
+    function test_CannotLockConfigBeforeARealMint() public {
+        vm.prank(owner);
+        vm.expectRevert(LineMint.ConfigNotProven.selector);
+        sale.lockConfig();
+    }
+
     function test_LockedConfigCannotChangePrice() public {
+        vm.prank(alice);
+        sale.mint();
+
         vm.startPrank(owner);
         sale.lockConfig();
         vm.expectRevert(LineMint.ConfigIsLocked.selector);
@@ -158,18 +243,32 @@ contract LineMintTest is Test {
         vm.stopPrank();
     }
 
+    function test_LockConfigIsNotRepeatable() public {
+        vm.prank(alice);
+        sale.mint();
+        vm.startPrank(owner);
+        sale.lockConfig();
+        vm.expectRevert(LineMint.ConfigIsLocked.selector);
+        sale.lockConfig();
+        vm.stopPrank();
+    }
+
+    function test_RenounceIsDisabled() public {
+        vm.prank(owner);
+        vm.expectRevert(LineMint.RenounceDisabled.selector);
+        sale.renounceOwnership();
+        assertEq(sale.owner(), owner);
+    }
+
     /* --------------------------------------------------- hostile tokens */
 
     /// The payer loses exactly `price` here — the fee is skimmed out of the
-    /// transfer — so a check on the payer's balance would wave this through
-    /// while part of the payment sat in a live fee wallet. Only the burn
-    /// address receiving every unit proves the tokens are gone.
+    /// transfer — so a check on the payer's balance alone would wave this
+    /// through while part of the payment sat in a live fee wallet.
     function test_FeeOnTransferTokenCannotBuy() public {
         MockFeeToken fee = new MockFeeToken();
         fee.mintTo(alice, PRICE * 2);
-
-        vm.prank(owner);
-        sale.configure(address(fee), PRICE, false);
+        _reconfigure(address(fee), PRICE, false);
 
         vm.startPrank(alice);
         fee.approve(address(sale), type(uint256).max);
@@ -183,9 +282,7 @@ contract LineMintTest is Test {
     function test_LyingBurnerCannotBuy() public {
         MockLyingBurner liar = new MockLyingBurner();
         liar.mintTo(alice, PRICE);
-
-        vm.prank(owner);
-        sale.configure(address(liar), PRICE, true);
+        _reconfigure(address(liar), PRICE, true);
 
         vm.startPrank(alice);
         liar.approve(address(sale), type(uint256).max);
@@ -194,6 +291,24 @@ contract LineMintTest is Test {
         vm.stopPrank();
 
         assertEq(nft.totalMinted(), 0);
+    }
+
+    /// A token whose burnFrom(account, amount) ignores `account` and burns from
+    /// msg.sender instead. Supply falls by exactly the price, so a sink-only
+    /// check passes — while the contract's own stray balance funds a free mint
+    /// for a buyer who paid nothing.
+    function test_SelfBurningTokenCannotBuyWithSomeoneElsesMoney() public {
+        MockSelfBurner self = new MockSelfBurner();
+        // Someone transferred instead of approving; the stray balance sits here.
+        self.mintTo(address(sale), PRICE * 5);
+        _reconfigure(address(self), PRICE, true);
+
+        // alice holds nothing and has approved nothing.
+        vm.prank(alice);
+        vm.expectRevert(LineMint.BurnFailed.selector);
+        sale.mint();
+
+        assertEq(nft.totalMinted(), 0, "a buyer who paid nothing must get nothing");
     }
 
     function test_ReceiverHookCannotMintTwiceOnOnePayment() public {
@@ -215,9 +330,6 @@ contract LineMintTest is Test {
     /* ----------------------------------------------------------- supply */
 
     function test_ExhaustsAtExactly3333() public {
-        vm.prank(owner);
-        sale.setMaxPerWallet(0);
-
         line.mintTo(alice, PRICE * 3333);
         vm.startPrank(alice);
         for (uint256 i = 0; i < 3333; i++) {

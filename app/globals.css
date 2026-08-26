@@ -84,6 +84,15 @@
 .nav-draw{font:9px var(--small);letter-spacing:.2em;text-transform:uppercase;color:var(--fg);border:1px solid #2c2c2c;padding:11px 17px;white-space:nowrap;transition:background .35s,color .35s,border-color .35s}
 .nav-draw:hover,.nav-draw:focus-visible{background:var(--fg);color:#000;border-color:var(--fg);outline:none}
 @media(max-width:480px){.nav-draw{padding:9px 13px;letter-spacing:.14em}}
+/* Docs sits beside Mint so the one page that explains the burn is visible
+   without hunting. Below 480px the bar already carries two marks, a menu and
+   Mint, so the second button drops out there and Docs is reached from the menu
+   instead — the alternative is Mint wrapping or being pushed off, and Mint is
+   the one control that must never move. */
+.nav-actions{display:flex;align-items:center;gap:10px}
+.nav-docs{color:var(--muted);border-color:#232323}
+.nav-docs:hover,.nav-docs:focus-visible{background:var(--fg);color:#000;border-color:var(--fg)}
+@media(max-width:480px){.nav-docs{display:none}}
 /* An answer can hold a button now, so the fade moves from the paragraph to the
    whole block — otherwise the text and the button would arrive separately. */
 .faq .faq-answer p{opacity:1;transform:none;transition:none}

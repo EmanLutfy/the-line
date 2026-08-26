@@ -5,7 +5,9 @@ import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 
-const openSeaUrl = 'https://opensea.io/'
+// Set once the collection is live. Until then the mark is hidden rather than
+// pointing at OpenSea's front page, which promises a listing that is not there.
+const openSeaUrl = process.env.NEXT_PUBLIC_OPENSEA_URL || ''
 
 const works = [
   ['1586', 'Legendary'], ['0837', 'Legendary'], ['2805', 'Legendary'], ['0371', 'Legendary'],
@@ -45,7 +47,7 @@ function IntroLoader({ onComplete }) {
 function Nav({ open, setOpen }) {
   const links = [['Collection', '#collection'], ['FAQ', '#faq']]
   return <header className="nav-wrap">
-    <div className="nav-right"><a className="twitter-mark" href="https://x.com/thelinesart" target="_blank" rel="noreferrer" aria-label="The Line on Twitter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-6.77 7.74L23.2 22h-6.24l-4.89-6.39L6.48 22H3.36l7.24-8.28L2.8 2h6.4l4.42 5.84L18.9 2Zm-1.1 17.8h1.73L8.28 4.08H6.43L17.8 19.8Z" /></svg></a><a className="opensea-mark" href={openSeaUrl} target="_blank" rel="noreferrer" aria-label="The Line on OpenSea"><img src="/opensea-logo.png" alt="" /></a><button className="menu-button" onClick={() => setOpen(!open)} aria-expanded={open} aria-label="Toggle navigation"><span /><span /></button></div>
+    <div className="nav-right"><a className="twitter-mark" href="https://x.com/thelinesart" target="_blank" rel="noreferrer" aria-label="The Line on Twitter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-6.77 7.74L23.2 22h-6.24l-4.89-6.39L6.48 22H3.36l7.24-8.28L2.8 2h6.4l4.42 5.84L18.9 2Zm-1.1 17.8h1.73L8.28 4.08H6.43L17.8 19.8Z" /></svg></a>{openSeaUrl && <a className="opensea-mark" href={openSeaUrl} target="_blank" rel="noreferrer" aria-label="The Line on OpenSea"><img src="/opensea-logo.png" alt="" /></a>}<button className="menu-button" onClick={() => setOpen(!open)} aria-expanded={open} aria-label="Toggle navigation"><span /><span /></button></div>
     <nav className={open ? 'nav-links is-open' : 'nav-links'}>{links.map(([label, href]) => <a key={label} href={href} onClick={() => setOpen(false)}>{label}</a>)}</nav>
     <Link className="nav-draw" href="/mint">Mint</Link>
   </header>
@@ -286,7 +288,7 @@ function FAQ() {
 }
 
 function Footer() {
-  return <footer className="footer section-frame"><div className="footer-top"><a className="wordmark" href="#top">The Line</a><span className="footer-note">© 2026</span><div className="footer-links"><a className="twitter-mark" href="https://x.com/thelinesart" target="_blank" rel="noreferrer" aria-label="The Line on Twitter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-6.77 7.74L23.2 22h-6.24l-4.89-6.39L6.48 22H3.36l7.24-8.28L2.8 2h6.4l4.42 5.84L18.9 2Zm-1.1 17.8h1.73L8.28 4.08H6.43L17.8 19.8Z" /></svg></a><a className="opensea-mark" href={openSeaUrl} target="_blank" rel="noreferrer" aria-label="The Line on OpenSea"><img src="/opensea-logo.png" alt="" /></a></div></div></footer>
+  return <footer className="footer section-frame"><div className="footer-top"><a className="wordmark" href="#top">The Line</a><span className="footer-note">© 2026</span><div className="footer-links"><a className="twitter-mark" href="https://x.com/thelinesart" target="_blank" rel="noreferrer" aria-label="The Line on Twitter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-6.77 7.74L23.2 22h-6.24l-4.89-6.39L6.48 22H3.36l7.24-8.28L2.8 2h6.4l4.42 5.84L18.9 2Zm-1.1 17.8h1.73L8.28 4.08H6.43L17.8 19.8Z" /></svg></a>{openSeaUrl && <a className="opensea-mark" href={openSeaUrl} target="_blank" rel="noreferrer" aria-label="The Line on OpenSea"><img src="/opensea-logo.png" alt="" /></a>}</div></div></footer>
 }
 
 export default function Home() {

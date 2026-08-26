@@ -47,7 +47,7 @@ function Nav({ open, setOpen }) {
   return <header className="nav-wrap">
     <div className="nav-right"><a className="twitter-mark" href="https://x.com/thelinesart" target="_blank" rel="noreferrer" aria-label="The Line on Twitter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-6.77 7.74L23.2 22h-6.24l-4.89-6.39L6.48 22H3.36l7.24-8.28L2.8 2h6.4l4.42 5.84L18.9 2Zm-1.1 17.8h1.73L8.28 4.08H6.43L17.8 19.8Z" /></svg></a><a className="opensea-mark" href={openSeaUrl} target="_blank" rel="noreferrer" aria-label="The Line on OpenSea"><img src="/opensea-logo.png" alt="" /></a><button className="menu-button" onClick={() => setOpen(!open)} aria-expanded={open} aria-label="Toggle navigation"><span /><span /></button></div>
     <nav className={open ? 'nav-links is-open' : 'nav-links'}>{links.map(([label, href]) => <a key={label} href={href} onClick={() => setOpen(false)}>{label}</a>)}</nav>
-    <a className="nav-draw" href="#faq-gtd" onClick={() => window.dispatchEvent(new CustomEvent('faq:open-draw'))}>Wishlist</a>
+    <Link className="nav-draw" href="/mint">Mint</Link>
   </header>
 }
 
@@ -269,20 +269,18 @@ function AboutFilm() {
 }
 
 function FAQ() {
-  const questions = [['What is The Line?', 'The Line explores the relationship between simplicity and complexity. Beginning with a single element, each work evolves through changes in space, structure and formation, creating 3,333 unique interpretations of the same idea.'], ['Where do I mint?', 'Minting takes place directly on the official OpenSea Drop. The link will be updated when available.'], ['How do I get on the list?', 'Registration is open now. One wallet, one place. Mint details follow on X.', 'Join The Wishlist'], ['How is the work drawn?', 'Each piece is drawn from six defined parameters: line count, formation, position, length, width and density.']]
+  const questions = [
+    ['What is The Line?', 'The Line explores the relationship between simplicity and complexity. Beginning with a single element, each work evolves through changes in space, structure and formation, creating 3,333 unique interpretations of the same idea.'],
+    ['How do I collect one?', 'Burn 150,000 $LINE on this site and one work is minted straight to your wallet. It is a single transaction: the burn and the mint happen together, or neither happens at all.', 'Go to Mint'],
+    ['What do I receive?', 'Every work stays unrevealed until all 3,333 have been collected. While the mint is open, no edition shows anything about itself, so no number is worth more than another at the moment you take it.'],
+    ['How is the work drawn?', 'Each piece is drawn from six defined parameters: line count, formation, position, length, width and density.'],
+  ]
   const [openIndex, setOpenIndex] = useState(-1)
-  useEffect(() => {
-    const openDrawAnswer = () => setOpenIndex(questions.findIndex(([, , action]) => action))
-    window.addEventListener('faq:open-draw', openDrawAnswer)
-    if (window.location.hash === '#faq-gtd') openDrawAnswer()
-    return () => window.removeEventListener('faq:open-draw', openDrawAnswer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
   return <section className="faq section-frame" id="faq"><SectionLabel number="03">Frequently asked</SectionLabel><div className="faq-grid"><div className="faq-title"><h2>You ask.<br /><em>We answer.</em></h2><span className="section-japanese" lang="ja">問いと答え</span></div><div className="faq-list">{questions.map(([q, a, action], index) => {
     const isOpen = openIndex === index
-    return <div className={isOpen ? 'faq-item is-open' : 'faq-item'} key={q} id={action ? 'faq-gtd' : undefined}>
+    return <div className={isOpen ? 'faq-item is-open' : 'faq-item'} key={q}>
       <button className="faq-summary" type="button" id={`faq-q-${index}`} aria-expanded={isOpen} aria-controls={`faq-a-${index}`} onClick={() => setOpenIndex(isOpen ? -1 : index)}>{q}<span aria-hidden="true">+</span></button>
-      <div className="faq-answer" id={`faq-a-${index}`} role="region" aria-labelledby={`faq-q-${index}`}><div><p>{a}</p>{action && <Link className="faq-action" href="/wishlist" tabIndex={isOpen ? 0 : -1}>{action}</Link>}</div></div>
+      <div className="faq-answer" id={`faq-a-${index}`} role="region" aria-labelledby={`faq-q-${index}`}><div><p>{a}</p>{action && <Link className="faq-action" href="/mint" tabIndex={isOpen ? 0 : -1}>{action}</Link>}</div></div>
     </div>
   })}</div></div></section>
 }

@@ -8,7 +8,7 @@ export const robinhoodMainnet = defineChain({
   id: 4663,
   name: 'Robinhood Chain',
   nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-  rpcUrls: { default: { http: [process.env.NEXT_PUBLIC_RPC_URL || ''] } },
+  rpcUrls: { default: { http: [process.env.NEXT_PUBLIC_RPC_URL_MAINNET || ''] } },
   blockExplorers: {
     default: { name: 'Blockscout', url: 'https://robinhoodchain.blockscout.com' },
   },
@@ -18,7 +18,7 @@ export const robinhoodTestnet = defineChain({
   id: 46630,
   name: 'Robinhood Chain Testnet',
   nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-  rpcUrls: { default: { http: [process.env.NEXT_PUBLIC_RPC_URL || ''] } },
+  rpcUrls: { default: { http: [process.env.NEXT_PUBLIC_RPC_URL_TESTNET || ''] } },
   blockExplorers: {
     default: { name: 'Explorer', url: 'https://explorer.testnet.chain.robinhood.com' },
   },

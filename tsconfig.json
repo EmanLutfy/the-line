@@ -38,6 +38,8 @@
   ],
   "exclude": [
     "node_modules",
-    "contracts"
+    "contracts",
+    "_to_delete",
+    "_backup_stale"
   ]
 }

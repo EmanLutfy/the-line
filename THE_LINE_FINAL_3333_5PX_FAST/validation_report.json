@@ -1,0 +1,18 @@
+{
+  "expected_supply": 3333,
+  "images": 3333,
+  "metadata": 3333,
+  "canvas": "2048x2048",
+  "line_width": "5 px",
+  "duplicate_images": 0,
+  "duplicate_metadata": 0,
+  "rarity_counts": {
+    "Common": 1999,
+    "Uncommon": 900,
+    "Rare": 300,
+    "Epic": 100,
+    "Legendary": 33,
+    "Mythic": 1
+  },
+  "pass": true
+}

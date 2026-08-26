@@ -162,6 +162,16 @@ function ResultView({ onClose }) {
   </div>
 }
 
+function ClosedView() {
+  return <div className={styles.result} role="status" aria-live="polite">
+    <span className={styles.resultKicker}>THE LINE</span>
+    <h2>Closed.</h2>
+    <p className={styles.resultHeadline}>THE WISHLIST IS CLOSED</p>
+    <p className={styles.resultBody}>The list is final. Mint details are announced on X.</p>
+    <a className={styles.textButton} href={X_PROFILE} target="_blank" rel="noreferrer">FOLLOW ON X</a>
+  </div>
+}
+
 export default function DrawPage() {
   const [wallet, setWallet] = useState('')
   const [handle, setHandle] = useState('')
@@ -237,7 +247,7 @@ export default function DrawPage() {
         if (data.code === 'ALREADY_ENTERED') setError('ALREADY ON THE LIST — This wallet is already registered.')
         else if (data.code === 'INVALID_WALLET') setError('INVALID ADDRESS — Enter a full wallet address (0x + 40 characters).')
         else if (data.code === 'INVALID_HANDLE') setError('INVALID HANDLE — Letters, numbers and underscore, up to 15 characters.')
-        else if (data.code === 'DRAW_CLOSED') setError('THE WISHLIST IS CLOSED.')
+        else if (data.code === 'DRAW_CLOSED') { setState('closed'); return }
         else if (data.code === 'NOT_AUTHENTICATED') setError('REGISTRATION IS NOT OPEN.')
         else if (data.code === 'VERIFICATION_FAILED') setError('VERIFICATION FAILED — Reload the page and try again.')
         else setError(`The wishlist is not available right now.${data.code ? ` (${data.code})` : ''}`)
@@ -260,6 +270,21 @@ export default function DrawPage() {
     }
   }
 
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/wishlist')
+      .then(response => response.json())
+      .then(data => {
+        if (cancelled || !data || !data.draw) return
+        if (data.draw.status !== 'open') setState('closed')
+      })
+      // A failed check leaves the form up: the server rejects a closed entry
+      // anyway, so the worst case is one wasted submit, not a list that keeps
+      // taking entries after it shut.
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
   const finishDrawing = () => setState('result')
 
   return <main className={styles.page}>
@@ -274,7 +299,7 @@ export default function DrawPage() {
           : <div className={styles.drawStill} aria-hidden="true"><i /></div>}
       </div>
       <div className={styles.heroCopy}>
-        {state === 'drawing' ? <div className={styles.drawingCopy}><span>What Happen.</span><p>One line. One place held.</p></div> : state === 'result' ? <ResultView onClose={() => setState('idle')} /> : <form className={styles.entry} onSubmit={submit}>
+        {state === 'closed' ? <ClosedView /> : state === 'drawing' ? <div className={styles.drawingCopy}><span>What Happen.</span><p>One line. One place held.</p></div> : state === 'result' ? <ResultView onClose={() => setState('idle')} /> : <form className={styles.entry} onSubmit={submit}>
           <div className={styles.field}>
             <label className={styles.inputLabel} htmlFor="twitter-handle">X / TWITTER</label>
             <input className={styles.walletInput} id="twitter-handle" name="twitterHandle" type="text" inputMode="text" autoComplete="off" spellCheck="false" maxLength={16} placeholder="@handle" value={handle} onChange={event => setHandle(event.target.value)} />

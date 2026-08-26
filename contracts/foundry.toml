@@ -1,0 +1,24 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+test = "test"
+solc = "0.8.24"
+optimizer = true
+optimizer_runs = 200
+
+# Robinhood Chain runs the Arbitrum stack, and Orbit chains do not always have
+# the Cancun opcodes (TSTORE, MCOPY) enabled. Pinning to Paris keeps the
+# bytecode to opcodes every Arbitrum chain has supported for years. Raise this
+# only after confirming what the chain actually accepts.
+evm_version = "paris"
+
+fs_permissions = []
+
+[fmt]
+line_length = 110
+bracket_spacing = false
+
+[rpc_endpoints]
+robinhood = "${ROBINHOOD_RPC_URL}"
+robinhood_testnet = "${ROBINHOOD_TESTNET_RPC_URL}"

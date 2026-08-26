@@ -1,0 +1,55 @@
+{
+  "name": "The Line #0149",
+  "description": "A minimalist generative study of line, space and formation.",
+  "image": "0149.png",
+  "attributes": [
+    {
+      "trait_type": "Rarity Tier",
+      "value": "Common",
+      "trait_count": 1999,
+      "collection_frequency": 0.59976
+    },
+    {
+      "trait_type": "Rarity Rank",
+      "value": 2301,
+      "trait_count": 1,
+      "collection_frequency": 0.0003
+    },
+    {
+      "trait_type": "Line Count",
+      "value": 32,
+      "trait_count": 147,
+      "collection_frequency": 0.044104
+    },
+    {
+      "trait_type": "Formation",
+      "value": "Drift",
+      "trait_count": 648,
+      "collection_frequency": 0.194419
+    },
+    {
+      "trait_type": "Position",
+      "value": "Upper + Lower",
+      "trait_count": 1022,
+      "collection_frequency": 0.306631
+    },
+    {
+      "trait_type": "Length",
+      "value": "Mixed",
+      "trait_count": 535,
+      "collection_frequency": 0.160516
+    },
+    {
+      "trait_type": "Width",
+      "value": "5 px",
+      "trait_count": 3333,
+      "collection_frequency": 1.0
+    },
+    {
+      "trait_type": "Density",
+      "value": "Medium",
+      "trait_count": 1800,
+      "collection_frequency": 0.540054
+    }
+  ]
+}

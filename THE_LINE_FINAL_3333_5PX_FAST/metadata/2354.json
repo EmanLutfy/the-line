@@ -1,0 +1,55 @@
+{
+  "name": "The Line #2354",
+  "description": "A minimalist generative study of line, space and formation.",
+  "image": "2354.png",
+  "attributes": [
+    {
+      "trait_type": "Rarity Tier",
+      "value": "Uncommon",
+      "trait_count": 900,
+      "collection_frequency": 0.270027
+    },
+    {
+      "trait_type": "Rarity Rank",
+      "value": 653,
+      "trait_count": 1,
+      "collection_frequency": 0.0003
+    },
+    {
+      "trait_type": "Line Count",
+      "value": 22,
+      "trait_count": 180,
+      "collection_frequency": 0.054005
+    },
+    {
+      "trait_type": "Formation",
+      "value": "Broken Flow",
+      "trait_count": 418,
+      "collection_frequency": 0.125413
+    },
+    {
+      "trait_type": "Position",
+      "value": "Lower",
+      "trait_count": 339,
+      "collection_frequency": 0.10171
+    },
+    {
+      "trait_type": "Length",
+      "value": "Medium",
+      "trait_count": 1238,
+      "collection_frequency": 0.371437
+    },
+    {
+      "trait_type": "Width",
+      "value": "5 px",
+      "trait_count": 3333,
+      "collection_frequency": 1.0
+    },
+    {
+      "trait_type": "Density",
+      "value": "Medium",
+      "trait_count": 1800,
+      "collection_frequency": 0.540054
+    }
+  ]
+}

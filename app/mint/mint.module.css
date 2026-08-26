@@ -1,0 +1,222 @@
+/* Same tokens and rhythm as /wishlist, so the two pages read as one site. */
+
+.page {
+  min-height: 100vh;
+  background: #000;
+  color: #f5f5f5;
+  color-scheme: dark;
+}
+
+/* Header — a way back out, in the wordmark the homepage footer uses. */
+.nav {
+  height: 78px;
+  padding: 0 clamp(22px, 6vw, 90px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.wordmark {
+  font: 400 20px/1 var(--display, Georgia, serif);
+  letter-spacing: .035em;
+  color: #f5f5f5;
+  text-decoration: none;
+  transition: opacity .3s;
+}
+.wordmark:hover, .wordmark:focus-visible { opacity: .65 }
+.navMeta {
+  font: 9px var(--small, monospace);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #777;
+}
+
+.hero {
+  min-height: calc(100vh - 78px);
+  display: grid;
+  grid-template-columns: 1.08fr .92fr;
+  align-items: stretch;
+}
+
+/* The pre-reveal mark. Deliberately the same for every token: until the
+   collection is complete, an id carries no information at all. */
+.art {
+  min-height: 620px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.artFrame {
+  width: min(70%, 620px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+.line, .lineStill {
+  display: block;
+  width: 1.4px;
+  height: 17%;
+  background: #f5f5f5;
+}
+.line { animation: breath 8s ease-in-out infinite }
+@keyframes breath {
+  0%, 100% { transform: scaleY(.92); opacity: .65 }
+  50%      { transform: scaleY(1);   opacity: 1 }
+}
+
+.copy {
+  align-self: center;
+  padding: clamp(85px, 11vw, 160px) clamp(22px, 6vw, 90px) 90px 0;
+}
+.panel, .result {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: min(100%, 380px);
+}
+
+.kicker {
+  margin-bottom: 24px;
+  font: 9px var(--small, monospace);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #777;
+}
+.statement {
+  font: 400 clamp(28px, 3.2vw, 46px)/.92 var(--display, Georgia, serif);
+  letter-spacing: -.045em;
+  color: #f5f5f5;
+}
+
+.priceBlock { margin-top: 40px }
+.priceValue {
+  display: block;
+  font: 400 clamp(22px, 2.2vw, 30px)/1.1 var(--display, Georgia, serif);
+  letter-spacing: -.03em;
+}
+.priceLabel {
+  display: block;
+  margin-top: 8px;
+  font: 9px var(--small, monospace);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #777;
+}
+
+.progress {
+  margin-top: 30px;
+  font: 9px var(--small, monospace);
+  letter-spacing: .16em;
+  color: #777;
+}
+
+/* Balance against requirement, set as a ledger — the one comparison that
+   decides whether the button can do anything. */
+.ledger {
+  width: 100%;
+  margin: 38px 0 0;
+  border-top: 1px solid #252525;
+}
+.ledger > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 20px;
+  padding: 13px 0;
+  border-bottom: 1px solid #252525;
+}
+.ledger dt {
+  font: 9px var(--small, monospace);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #777;
+}
+.ledger dd {
+  margin: 0;
+  font: 12px var(--small, monospace);
+  letter-spacing: .04em;
+  color: #f5f5f5;
+}
+
+.button, .ghostButton {
+  display: block;
+  width: 100%;
+  margin-top: 30px;
+  padding: 14px 12px;
+  text-align: center;
+  border-radius: 0;
+  font: 9px var(--small, monospace);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background .3s, color .3s, border-color .3s, opacity .3s;
+}
+.button {
+  background: #f5f5f5;
+  color: #050505;
+  border: 1px solid #f5f5f5;
+}
+.button:hover:not(:disabled), .button:focus-visible:not(:disabled) {
+  background: #050505;
+  color: #f5f5f5;
+}
+.button:disabled { opacity: .38; cursor: not-allowed }
+
+.ghostButton {
+  margin-top: 14px;
+  background: none;
+  color: #f5f5f5;
+  border: 1px solid #3a3a3a;
+}
+.ghostButton:hover, .ghostButton:focus-visible {
+  background: #f5f5f5;
+  color: #050505;
+  border-color: #f5f5f5;
+}
+
+/* Reserves the button's box before hydration decides which one to show, so
+   nothing below it jumps. */
+.buttonPlaceholder { width: 100%; height: 74px }
+
+.actions { width: 100%; }
+
+.notice, .error {
+  margin-top: 18px;
+  font: 9px/1.7 var(--small, monospace);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #f5f5f5;
+}
+.error a { color: #777; border-bottom: 1px solid #3a3a3a }
+.note {
+  margin-top: 16px;
+  max-width: 330px;
+  font: 12px/1.7 var(--sans, Arial, sans-serif);
+  color: #777;
+}
+
+.result h2 {
+  font: 400 clamp(66px, 8vw, 112px)/.86 var(--display, Georgia, serif);
+  letter-spacing: -.03em;
+  color: #f5f5f5;
+}
+.resultBody {
+  margin-top: 20px;
+  font: 11px var(--small, monospace);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: #f5f5f5;
+}
+
+@media (max-width: 700px) {
+  .nav { height: 68px; padding: 0 22px }
+  .hero { min-height: calc(100vh - 68px); grid-template-columns: 1fr }
+  .art { min-height: 47vh }
+  .artFrame { width: 88vw }
+  .copy { padding: 64px 22px 86px }
+  .panel, .result { width: 100% }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line { animation: none }
+}

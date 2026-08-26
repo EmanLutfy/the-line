@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { formatUnits } from 'viem'
 import { useAccount, useConnect, useSwitchChain } from 'wagmi'
@@ -40,6 +40,18 @@ export default function MintPage() {
 
   const [revealed, setRevealed] = useState(false)
   const [muted, setMuted] = useState(false)
+  const [picking, setPicking] = useState(false)
+
+  // wagmi discovers every installed wallet through EIP-6963 and also keeps a
+  // generic "Injected" fallback. When real wallets have announced themselves
+  // the fallback is noise — and worse, ambiguous: it connects to whichever one
+  // happened to claim window.ethereum, which is not a choice the visitor made.
+  const wallets = useMemo(() => {
+    const announced = connectors.filter(connector => connector.id !== 'injected')
+    if (announced.length) return announced
+    if (typeof window !== 'undefined' && (window as { ethereum?: unknown }).ethereum) return connectors
+    return []
+  }, [connectors])
 
   const { step, error, tokenId, price, decimals, balance, totalMinted } = mint
   const collected = totalMinted !== undefined ? Number(totalMinted) : null
@@ -161,14 +173,50 @@ export default function MintPage() {
               ) : soldOut ? (
                 <p className={styles.status}>All 3,333 have been collected.</p>
               ) : !isConnected ? (
-                <button
-                  className={styles.button}
-                  type="button"
-                  disabled={connecting || connectors.length === 0}
-                  onClick={() => connectors[0] && connect({ connector: connectors[0] })}
-                >
-                  {connecting ? 'CONNECTING' : 'CONNECT WALLET'}
-                </button>
+                picking && wallets.length > 1 ? (
+                  <ul className={styles.wallets}>
+                    {wallets.map(connector => (
+                      <li key={connector.uid}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPicking(false)
+                            connect({ connector })
+                          }}
+                        >
+                          {connector.icon && <img src={connector.icon} alt="" />}
+                          <span>{connector.name}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <>
+                    <button
+                      className={styles.button}
+                      type="button"
+                      disabled={connecting || wallets.length === 0}
+                      // One wallet is not a choice, so it does not get a menu.
+                      onClick={() =>
+                        wallets.length === 1 ? connect({ connector: wallets[0] }) : setPicking(true)
+                      }
+                    >
+                      {connecting ? 'CONNECTING' : wallets.length === 0 ? 'NO WALLET FOUND' : 'CONNECT WALLET'}
+                    </button>
+                    {/* Shown only when nothing was detected, so it never gets in
+                        the way of someone who already has a wallet. Mobile comes
+                        first: a phone visitor almost always owns a wallet — it is
+                        just an app, and this page is open in Safari or Chrome
+                        instead of inside it. Telling them to "install a wallet"
+                        would be the wrong advice for the likelier case. */}
+                    {wallets.length === 0 && (
+                      <p className={styles.note}>
+                        No wallet detected. On a phone, open this page inside your wallet
+                        app&apos;s own browser. On a computer, install a browser wallet and reload.
+                      </p>
+                    )}
+                  </>
+                )
               ) : mint.wrongNetwork ? (
                 <button
                   className={styles.button}
